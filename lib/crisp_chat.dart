@@ -1,10 +1,11 @@
-import 'package:flutter/foundation.dart';
-
 import 'src/config.dart';
+// ignore: unused_import
+import 'src/crisp_events.dart';
 import 'src/flutter_crisp_chat_platform_interface.dart';
 import 'src/helper.dart';
 
 export 'src/config.dart';
+export 'src/crisp_events.dart';
 
 /// [FlutterCrispChat] to call the native platform method.
 class FlutterCrispChat {
@@ -57,16 +58,14 @@ class FlutterCrispChat {
   /// This method returns the session ID or null if no session is active.
   static Future<String?> getSessionIdentifier() async {
     try {
-      final sessionId =
+      final String? sessionId =
           await FlutterCrispChatPlatform.instance.getSessionIdentifier();
       if (sessionId == null || sessionId.isEmpty) {
         throw Exception("No active session identifier found!");
       }
       return sessionId;
     } catch (e) {
-      if (kDebugMode) {
-        print("Error retrieving session identifier: $e");
-      }
+      print("Error retrieving session identifier: $e");
       return null;
     }
   }

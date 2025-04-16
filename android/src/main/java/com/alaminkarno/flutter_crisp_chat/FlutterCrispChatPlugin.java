@@ -212,53 +212,34 @@ public class FlutterCrispChatPlugin implements FlutterPlugin, MethodCallHandler,
             Crisp.setTokenID(context, config.tokenId);
         }
 
+        if (config.sessionSegment != null) {
+            Crisp.setSessionSegment(config.sessionSegment);
+        }
         if (config.user != null) {
-            if (config.user.email != null) {
-                Crisp.setUserEmail(config.user.email);
+            if (config.user.nickName != null) {
+                Crisp.setUserNickname(config.user.nickName);
             }
-            if (config.user.nickname != null) {
-                Crisp.setUserNickname(config.user.nickname);
+            if (config.user.email != null) {
+                boolean result =  Crisp.setUserEmail(config.user.email);
+                if(!result){
+                    Log.d("CRSIP_CHAT","Email not set");
+                }
             }
             if (config.user.avatar != null) {
-                Crisp.setUserAvatar(config.user.avatar);
+               boolean result = Crisp.setUserAvatar(config.user.avatar);
+               if(!result){
+                   Log.d("CRSIP_CHAT","Avatar not set");
+               }
             }
             if (config.user.phone != null) {
-                Crisp.setUserPhone(config.user.phone);
-            }
-            if (config.user.namespacesData != null) {
-                for (String namespace : config.user.namespacesData.keySet()) {
-                    HashMap<String, Object> nsData = config.user.namespacesData.get(namespace);
-                    for (String key : nsData.keySet()) {
-                        Object value = nsData.get(key);
-                        if (value instanceof String) {
-                            Crisp.setUserData(namespace, key, (String) value);
-                        } else if (value instanceof Integer) {
-                            Crisp.setUserData(namespace, key, (Integer) value);
-                        }
-                    }
+                boolean result =  Crisp.setUserPhone(config.user.phone);
+                if(!result){
+                    Log.d("CRSIP_CHAT","Phone not set");
                 }
             }
-        }
-
-        if (config.sessionData != null) {
-            for (String key : config.sessionData.keySet()) {
-                Object value = config.sessionData.get(key);
-                if (value instanceof String) {
-                    Crisp.setSessionString(key, (String) value);
-                } else if (value instanceof Integer) {
-                    Crisp.setSessionInt(key, (Integer) value);
-                }
+            if (config.user.company != null) {
+                Crisp.setUserCompany(config.user.company.toCrispCompany());
             }
-        }
-
-        if (config.company != null) {
-            Crisp.setCompany(
-                    config.company.name,
-                    config.company.url,
-                    config.company.companyDescription,
-                    config.company.employment,
-                    config.company.geolocation
-            );
         }
 
         if (config.segments != null && !config.segments.isEmpty()) {

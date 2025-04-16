@@ -14,15 +14,10 @@ import java.util.List;
 
 import im.crisp.client.external.ChatActivity;
 import im.crisp.client.external.Crisp;
-import im.crisp.client.external.events.EventsCallback;
-import im.crisp.client.external.data.message.Message;
 
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
-import io.flutter.plugin.common.EventChannel;
-import io.flutter.plugin.common.EventChannel.EventSink;
-import io.flutter.plugin.common.EventChannel.StreamHandler;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
@@ -37,11 +32,8 @@ import io.flutter.plugin.common.MethodChannel.Result;
 public class FlutterCrispChatPlugin implements FlutterPlugin, MethodCallHandler, ActivityAware {
 
     private static final String CHANNEL_NAME = "flutter_crisp_chat";
-    private static final String EVENT_CHANNEL_NAME = "flutter_crisp_chat_events";
 
     private MethodChannel channel;
-    private EventChannel eventChannel;
-    private EventSink eventSink;
     private Context context;
     private Activity activity;
 
@@ -51,19 +43,6 @@ public class FlutterCrispChatPlugin implements FlutterPlugin, MethodCallHandler,
 
         channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), CHANNEL_NAME);
         channel.setMethodCallHandler(this);
-
-        eventChannel = new EventChannel(flutterPluginBinding.getBinaryMessenger(), EVENT_CHANNEL_NAME);
-        eventChannel.setStreamHandler(new StreamHandler() {
-            @Override
-            public void onListen(Object arguments, EventSink events) {
-                eventSink = events;
-            }
-
-            @Override
-            public void onCancel(Object arguments) {
-                eventSink = null;
-            }
-        });
     }
 
     @Override
@@ -89,110 +68,59 @@ public class FlutterCrispChatPlugin implements FlutterPlugin, MethodCallHandler,
     /// [onMethodCall] if for handling method call from flutter end.
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
-        Log.d("CRISP_CHAT", "Using JAVA implementation of FlutterCrispChatPlugin");
         if (call.method.equals("openCrispChat")) {
-            try {
-                Log.d("CRISP_CHAT", "Starting openCrispChat");
-                HashMap<String, Object> args = (HashMap<String, Object>) call.arguments;
-                if (args != null) {
-                    CrispConfig config = CrispConfig.fromJson(args);
-                    if (config.tokenId != null) {
-                        Crisp.configure(context, config.websiteId, config.tokenId);
-                    } else {
-                        Crisp.configure(context, config.websiteId);
-                    }
-
-                    Crisp.enableNotifications(context, config.enableNotifications);
-                    setCrispData(context, config);
-                    openActivity();
-                    Log.d("CRISP_CHAT", "Successfully opened Crisp Chat");
-                    result.success(null);
+            HashMap<String, Object> args = (HashMap<String, Object>) call.arguments;
+            if (args != null) {
+                CrispConfig config = CrispConfig.fromJson(args);
+                if (config.tokenId != null) {
+                    Crisp.configure(context, config.websiteId, config.tokenId);
                 } else {
-                    result.notImplemented();
+                    Crisp.configure(context, config.websiteId);
                 }
-            } catch (Exception e) {
-                Log.e("CRISP_CHAT", "Error opening Crisp Chat: " + e.getMessage());
-                result.error("CRISP_ERROR", "Failed to open Crisp Chat", e.getMessage());
+
+                Crisp.enableNotifications(context, config.enableNotifications);
+                setCrispData(context, config);
+                openActivity();
+            } else {
+                result.notImplemented();
             }
         } else if (call.method.equals("resetCrispChatSession")) {
-            try {
-                Crisp.resetChatSession(context);
-                result.success(null);
-            } catch (Exception e) {
-                Log.e("CRISP_CHAT", "Error resetting Crisp Chat session: " + e.getMessage());
-                result.error("RESET_ERROR", "Failed to reset session", e.getMessage());
-            }
+            Crisp.resetChatSession(context);
         } else if (call.method.equals("setSessionString")) {
-            try {
-                HashMap<String, Object> args = (HashMap<String, Object>) call.arguments;
-                if (args != null) {
-                    String key = (String) args.get("key");
-                    String value = (String) args.get("value");
-                    Crisp.setSessionString(key, value);
-                    Log.d("CRISP_CHAT", "Set session string for key: " + key);
-                    result.success(null);
-                } else {
-                    result.error("INVALID_ARGS", "Invalid arguments for setSessionString", null);
-                }
-            } catch (Exception e) {
-                Log.e("CRISP_CHAT", "Error setting session string: " + e.getMessage());
-                result.error("SESSION_STRING_ERROR", "Failed to set session string", e.getMessage());
+            HashMap<String, Object> args = (HashMap<String, Object>) call.arguments;
+            if (args != null) {
+                String key = (String) args.get("key");
+                String value = (String) args.get("value");
+                Crisp.setSessionString(key, value);
             }
         } else if (call.method.equals("setSessionInt")) {
-            try {
-                HashMap<String, Object> args = (HashMap<String, Object>) call.arguments;
-                if (args != null) {
-                    String key = (String) args.get("key");
-                    int value = (int) args.get("value");
-                    Crisp.setSessionInt(key, value);
-                    Log.d("CRISP_CHAT", "Set session int for key: " + key);
-                    result.success(null);
-                } else {
-                    result.error("INVALID_ARGS", "Invalid arguments for setSessionInt", null);
-                }
-            } catch (Exception e) {
-                Log.e("CRISP_CHAT", "Error setting session int: " + e.getMessage());
-                result.error("SESSION_INT_ERROR", "Failed to set session int", e.getMessage());
+            HashMap<String, Object> args = (HashMap<String, Object>) call.arguments;
+            if (args != null) {
+                String key = (String) args.get("key");
+                int value = (int) args.get("value");
+                Crisp.setSessionInt(key, value);
             }
         } else if (call.method.equals("getSessionIdentifier")) {
-            try {
-                String sessionId = Crisp.getSessionIdentifier(context);
-                if (sessionId != null) {
-                    Log.d("CRISP_CHAT", "Got session identifier: " + sessionId);
-                    result.success(sessionId);
-                } else {
-                    Log.d("CRISP_CHAT", "No active session found");
-                    result.error("NO_SESSION", "No active session found", null);
-                }
-            } catch (Exception e) {
-                Log.e("CRISP_CHAT", "Error getting session identifier: " + e.getMessage());
-                result.error("SESSION_ID_ERROR", "Failed to get session identifier", e.getMessage());
+            String sessionId = Crisp.getSessionIdentifier(context);
+            if (sessionId != null) {
+                result.success(sessionId);
+            } else {
+                result.error("NO_SESSION", "No active session found", null);
             }
         } else if (call.method.equals("setSessionSegments")) {
-            try {
-                HashMap<String, Object> args = (HashMap<String, Object>) call.arguments;
-                if (args != null) {
-                    List<String> segments = (List<String>) args.get("segments");
-                    boolean overwrite = (boolean) args.get("overwrite");
-                    Crisp.setSessionSegments(segments, overwrite);
-                    Log.d("CRISP_CHAT", "Set session segments: " + segments);
-                    result.success(null);
-                } else {
-                    result.error("INVALID_ARGS", "Invalid arguments for setSessionSegments", null);
-                }
-            } catch (Exception e) {
-                Log.e("CRISP_CHAT", "Error setting session segments: " + e.getMessage());
-                result.error("SESSION_SEGMENTS_ERROR", "Failed to set session segments", e.getMessage());
+            HashMap<String, Object> args = (HashMap<String, Object>) call.arguments;
+            if (args != null) {
+                List<String> segments = (List<String>) args.get("segments");
+                boolean overwrite = (boolean) args.get("overwrite");
+                Crisp.setSessionSegments(segments, overwrite);
             }
-        } else {
+        }
+        else {
             result.notImplemented();
         }
     }
 
     private void setCrispData(Context context, CrispConfig config) {
-        // Register callback for chat events
-        registerCrispCallbacks();
-        
         if (config.tokenId != null) {
             Crisp.setTokenID(context, config.tokenId);
         }
@@ -228,86 +156,6 @@ public class FlutterCrispChatPlugin implements FlutterPlugin, MethodCallHandler,
 
     }
 
-    private void registerCrispCallbacks() {
-        // First make sure to remove any existing callbacks to prevent duplicates
-        try {
-            Crisp.removeAllCallbacks();
-        } catch (Exception e) {
-            Log.e("CRISP_CHAT", "Error removing callbacks: " + e.getMessage());
-        }
-        
-        // Add our new callback
-        Crisp.addEventsCallback(new EventsCallback() {
-            @Override
-            public void onChatboxOpened() {
-                Log.d("CRISP_CHAT", "Chat box opened");
-                sendEventToFlutter("onChatboxOpened", null);
-            }
-
-            @Override
-            public void onChatboxClosed() {
-                Log.d("CRISP_CHAT", "Chat box closed");
-                sendEventToFlutter("onChatboxClosed", null);
-            }
-
-            @Override
-            public void onMessageSent(Message message) {
-                Log.d("CRISP_CHAT", "Message sent: " + message.getContent().getText());
-                HashMap<String, Object> data = new HashMap<>();
-                data.put("content", message.getContent().getText());
-                data.put("timestamp", message.getTimestamp());
-                data.put("from", "user");
-                sendEventToFlutter("onMessageSent", data);
-            }
-
-            @Override
-            public void onMessageReceived(Message message) {
-                Log.d("CRISP_CHAT", "Message received: " + message.getContent().getText());
-                HashMap<String, Object> data = new HashMap<>();
-                data.put("content", message.getContent().getText());
-                data.put("timestamp", message.getTimestamp());
-                data.put("from", "operator");
-                sendEventToFlutter("onMessageReceived", data);
-            }
-
-            @Override
-            public void onSessionEvent(String event) {
-                Log.d("CRISP_CHAT", "Session event: " + event);
-                HashMap<String, Object> data = new HashMap<>();
-                data.put("event", event);
-                sendEventToFlutter("onSessionEvent", data);
-            }
-
-            @Override
-            public void onSessionReset() {
-                Log.d("CRISP_CHAT", "Session reset");
-                sendEventToFlutter("onSessionReset", null);
-            }
-
-            @Override
-            public void onUnreadCountChanged(int unreadCount) {
-                Log.d("CRISP_CHAT", "Unread count changed: " + unreadCount);
-                HashMap<String, Object> data = new HashMap<>();
-                data.put("count", unreadCount);
-                sendEventToFlutter("onUnreadCountChanged", data);
-            }
-        });
-    }
-
-    private void sendEventToFlutter(String eventName, Object data) {
-        if (eventSink != null) {
-            try {
-                HashMap<String, Object> eventData = new HashMap<>();
-                eventData.put("event", eventName);
-                eventData.put("data", data);
-                eventSink.success(eventData);
-            } catch (Exception e) {
-                Log.e("CRISP_CHAT", "Error sending event to Flutter: " + e.getMessage());
-                eventSink.error("EVENT_ERROR", "Failed to send event to Flutter", e.getMessage());
-            }
-        }
-    }
-
     ///[openActivity] is opening ChatView Activity of CrispChat SDK.
     private void openActivity() {
         Intent intent = new Intent(context, ChatActivity.class);
@@ -320,17 +168,8 @@ public class FlutterCrispChatPlugin implements FlutterPlugin, MethodCallHandler,
 
     @Override
     public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
-        if (channel != null) {
-            channel.setMethodCallHandler(null);
-            channel = null;
-        }
-        if (eventChannel != null) {
-            eventChannel.setStreamHandler(null);
-            eventChannel = null;
-        }
+        channel.setMethodCallHandler(null);
         context = null;
-        // Make sure to reset any other state
-        activity = null;
     }
 
 }

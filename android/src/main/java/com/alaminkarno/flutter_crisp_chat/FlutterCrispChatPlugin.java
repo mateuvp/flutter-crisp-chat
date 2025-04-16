@@ -186,22 +186,6 @@ public class FlutterCrispChatPlugin implements FlutterPlugin, MethodCallHandler,
                 Log.e("CRISP_CHAT", "Error getting session identifier: " + e.getMessage());
                 result.error("SESSION_ID_ERROR", "Failed to get session identifier", e.getMessage());
             }
-        } else if (call.method.equals("setSessionSegments")) {
-            try {
-                HashMap<String, Object> args = (HashMap<String, Object>) call.arguments;
-                if (args != null) {
-                    List<String> segments = (List<String>) args.get("segments");
-                    boolean overwrite = (boolean) args.get("overwrite");
-                    Crisp.setSessionSegments(segments, overwrite);
-                    Log.d("CRISP_CHAT", "Set session segments: " + segments);
-                    result.success(null);
-                } else {
-                    result.error("INVALID_ARGS", "Invalid arguments for setSessionSegments", null);
-                }
-            } catch (Exception e) {
-                Log.e("CRISP_CHAT", "Error setting session segments: " + e.getMessage());
-                result.error("SESSION_SEGMENTS_ERROR", "Failed to set session segments", e.getMessage());
-            }
         } else {
             result.notImplemented();
         }
@@ -240,10 +224,6 @@ public class FlutterCrispChatPlugin implements FlutterPlugin, MethodCallHandler,
             if (config.user.company != null) {
                 Crisp.setUserCompany(config.user.company.toCrispCompany());
             }
-        }
-
-        if (config.segments != null && !config.segments.isEmpty()) {
-            Crisp.setSessionSegments(config.segments, true);
         }
     }
 
